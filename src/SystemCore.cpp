@@ -18,7 +18,7 @@ Manager& Manager::getInstance() {
 
 Manager::Manager(): mNotifyTask(nullptr) {
   DEBUG_ENABLE_TAG_MAN();  
-	esp_err_t ret = nvs_flash_init();
+  esp_err_t ret = nvs_flash_init();
 
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
     DEBUG_CHECK_ESP_VAL_MAN(nvs_flash_erase());

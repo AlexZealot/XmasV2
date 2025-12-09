@@ -16,7 +16,7 @@
  * @brief Конфигурация стеков
  */
 namespace STACK_SIZES {
-	constexpr sz MANAGER_STACK = 1024 * 4;
+  constexpr sz MANAGER_STACK = 1024 * 4;
 }
 
 /**
@@ -24,5 +24,5 @@ namespace STACK_SIZES {
  * @brief Конфигурация приоритетов задач
  */
 namespace TASK_PRIO {
-	constexpr sz MANAGER_PRIO = 3;
+  constexpr sz MANAGER_PRIO = 3;
 }

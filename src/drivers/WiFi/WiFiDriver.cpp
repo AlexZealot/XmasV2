@@ -62,14 +62,14 @@ bool WiFiDriver::softAP(const char* ssid, const char* pass, uint8_t channel) {
 
   // Конфигурация точки доступа
   wifi_config_t wifi_config = {
-	  .ap = {
+    .ap = {
       .ssid = {0,},
       .password = {0,},
       .ssid_len = 0,
-      .channel = channel,			
+      .channel = channel,      
       .authmode = WIFI_AUTH_WPA2_PSK,
-      .ssid_hidden = 0,				
-      .max_connection = 4,	
+      .ssid_hidden = 0,
+      .max_connection = 4,
       .beacon_interval = 100,
       .csa_count = 3,
       .dtim_period = 1,
@@ -87,16 +87,16 @@ bool WiFiDriver::softAP(const char* ssid, const char* pass, uint8_t channel) {
         .protected_keep_alive = false
       },
       .gtk_rekey_interval = 0,
-	  },
+    },
   };
-	memcpy(wifi_config.ap.ssid, ssid, strlen(ssid));
+  memcpy(wifi_config.ap.ssid, ssid, strlen(ssid));
   
   // Если пароль пустой, то открытая сеть
   if (pass == nullptr || strlen(pass) == 0) {
     wifi_config.ap.authmode = WIFI_AUTH_OPEN;
   } else {
-		memcpy(wifi_config.ap.password, pass, strlen(pass));
-	}
+    memcpy(wifi_config.ap.password, pass, strlen(pass));
+  }
 
   wifi_mode_t curMode;
   esp_wifi_get_mode(&curMode);
