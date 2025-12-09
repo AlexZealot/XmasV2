@@ -7,9 +7,6 @@
  * 
  * @copyright Copyright (c) 2025
  */
-# include "debug.h"
-# include "esp_log.h"
-# include "FreeRTOS/FreeRTOS.h"
 
 # include "SystemCore.h"
 # include "WiFi/WiFiMan.h"
