@@ -276,10 +276,14 @@ bool WiFiDriver::stopAP() {
 
 bool WiFiDriver::startSTA(const char* ssid, const char* pass) {
   esp_wifi_stop();
+  vTaskDelay(pdMS_TO_TICKS(1000));
   if (mSTANetif == nullptr) {
-    mSTANetif = esp_netif_create_default_wifi_sta();
-    if (mSTANetif == nullptr) {
-      return false;
+    mSTANetif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (!mSTANetif) {
+        mSTANetif = esp_netif_create_default_wifi_sta();
+        if (!mSTANetif) {
+            return false;
+        }
     }
   }
 
