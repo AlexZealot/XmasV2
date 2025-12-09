@@ -1,6 +1,6 @@
 /**
  * @file WiFiMan.h
- * @Алексей Казаков Zealot (akazakov.zealot@gmail.com)
+ * @author Алексей Казаков Zealot (akazakov.zealot@gmail.com)
  * @brief подсистема для работы с WiFi
  * @version 0.1
  * @date 08-12-2025
@@ -33,5 +33,5 @@ class WiFiMan: public Listener {
      */
     virtual void onEvent(MsgID msg, const void* data) override;
   private:
-    WiFiDriver* mDriver;
+
 };

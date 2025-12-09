@@ -22,4 +22,7 @@ struct IPAddress {
   IPAddress() {
     raw = 0;
   }
+  IPAddress(unsigned long a) {
+    raw = a;
+  }
 };

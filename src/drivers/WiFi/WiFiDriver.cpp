@@ -1,6 +1,6 @@
 /**
  * @file WiFiDriver.cpp
- * @author AlexSibZavod (a.kazakov@sibirzavod.ru)
+ * @author Алексей Казаков Zealot (akazakov.zealot@gmail.com)
  * @brief реализация класса WiFiDriver
  * @version 0.1
  * @date 09-12-2025
@@ -15,10 +15,13 @@
  * @brief пространство имен для битов событий WiFi
  */
 namespace WIFI_EG_BITS {
-  constexpr EventBits_t WIFI_HAS_AP_BIT = (1 << 0);       /**< включена ли AP */
+  constexpr EventBits_t WIFI_HAS_AP_BIT = (1 << 0); /**< включена ли AP */
+  constexpr EventBits_t WIFI_STA_CONNECTED_BIT = (1 << 1); /**< подключились ли к AP */
+  constexpr EventBits_t WIFI_STA_FAIL_BIT = (1 << 2); /**< не удалось подключиться к AP */
+  constexpr EventBits_t WIFI_HAS_STA_BIT = (1 << 3); /**< включен ли STA */
 }
 
-WiFiDriver::WiFiDriver(): mAPNetif(nullptr), mSTANetif(nullptr), mWiFiEventGroup(nullptr), mEHInstance(nullptr) {
+WiFiDriver::WiFiDriver() {
   mWiFiEventGroup = xEventGroupCreate();
   assert(mWiFiEventGroup != nullptr);
   ESP_ERROR_CHECK(esp_netif_init());
@@ -32,6 +35,15 @@ WiFiDriver::WiFiDriver(): mAPNetif(nullptr), mSTANetif(nullptr), mWiFiEventGroup
       &mEHInstance
     )
   );
+  ESP_ERROR_CHECK(
+    esp_event_handler_instance_register(
+      IP_EVENT,
+      IP_EVENT_STA_GOT_IP,
+      &wifiEventHandler,
+      this,
+      &mEHInstanceIP
+    )
+  );
 }
 
 WiFiDriver::~WiFiDriver() {
@@ -39,6 +51,10 @@ WiFiDriver::~WiFiDriver() {
   if (mEHInstance != nullptr) {
     esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, mEHInstance);
     mEHInstance = nullptr;
+  }
+  if (mEHInstanceIP != nullptr) {
+    esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, mEHInstanceIP);
+    mEHInstanceIP = nullptr;
   }
 }
 
@@ -146,22 +162,71 @@ bool WiFiDriver::isApActive() {
 }
 
 void WiFiDriver::wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+  auto wifiDriver = static_cast<WiFiDriver*>(arg);
+  static int sta_retry_count = 0;
+  
   if (event_base == WIFI_EVENT) {
-      switch (event_id) {
-        case WIFI_EVENT_AP_STACONNECTED: {
-          break;
+    switch (event_id) {
+      case WIFI_EVENT_AP_STACONNECTED: {
+        if (wifiDriver->mOnAPConnected) {
+          wifiDriver->mOnAPConnected();
         }
-        case WIFI_EVENT_AP_STADISCONNECTED: {
-          break;
+        break;
+      }
+      case WIFI_EVENT_AP_STADISCONNECTED: {
+        if (wifiDriver->mOnAPDisconnected) {
+          wifiDriver->mOnAPDisconnected();
         }
-        case WIFI_EVENT_AP_START:
-          break;
-        case WIFI_EVENT_AP_STOP:
-          break;
-        default:
-          break;
+        break;
+      }
+      case WIFI_EVENT_STA_START: {
+        if (wifiDriver->mOnSTAStarted) {
+          wifiDriver->mOnSTAStarted();
+        }
+        break;
+      }
+          
+      case WIFI_EVENT_STA_CONNECTED: {
+        if (wifiDriver->mOnSTAConnected) {
+          wifiDriver->mOnSTAConnected();
+        }
+        sta_retry_count = 0;
+        break;
+      }
+          
+      case WIFI_EVENT_STA_DISCONNECTED: {
+        if (wifiDriver->mOnSTADisconnected) {
+          wifiDriver->mOnSTADisconnected();
+        }
+        if (sta_retry_count < wifiDriver->MaxRetryCount) {
+          esp_wifi_connect();
+          sta_retry_count++;
+        } else {
+          xEventGroupSetBits(wifiDriver->mWiFiEventGroup, WIFI_EG_BITS::WIFI_STA_FAIL_BIT);
+          xEventGroupClearBits(wifiDriver->mWiFiEventGroup, WIFI_EG_BITS::WIFI_STA_CONNECTED_BIT);
+        }
+        break;
+      }
+          
+      case WIFI_EVENT_STA_AUTHMODE_CHANGE: {
+        if (wifiDriver->mOnAuthChanged) {
+          wifiDriver->mOnAuthChanged();
+        }
+        break;
+      }
     }
-  }
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    if (wifiDriver->mOnSTAIPReceived) {
+      ip_event_got_ip_t* event = static_cast<ip_event_got_ip_t*>(event_data);
+      IPAddress ip = event->ip_info.ip.addr;
+      wifiDriver->mOnSTAIPReceived(ip);
+    }
+    // ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+    // ESP_LOGI(TAG, "STA получила IP: " IPSTR, IP2STR(&event->ip_info.ip));
+    sta_retry_count = 0;
+    xEventGroupClearBits(wifiDriver->mWiFiEventGroup, WIFI_EG_BITS::WIFI_STA_FAIL_BIT);
+    xEventGroupSetBits(wifiDriver->mWiFiEventGroup, WIFI_EG_BITS::WIFI_STA_CONNECTED_BIT);
+  }  
 }
 
 bool WiFiDriver::stopAP() {
@@ -207,4 +272,107 @@ bool WiFiDriver::stopAP() {
   }
 
   return true;
+}
+
+bool WiFiDriver::startSTA(const char* ssid, const char* pass) {
+  esp_wifi_stop();
+  if (mSTANetif == nullptr) {
+    mSTANetif = esp_netif_create_default_wifi_sta();
+    if (mSTANetif == nullptr) {
+      return false;
+    }
+  }
+
+  wifi_config_t sta_config = {
+    .sta = {
+      .ssid = {0,},
+      .password = {0,},
+      .scan_method = wifi_scan_method_t::WIFI_FAST_SCAN,
+      .bssid_set = false,
+      .bssid = {0,},
+      .channel = 0,
+      .listen_interval = 0,
+      .sort_method = wifi_sort_method_t::WIFI_CONNECT_AP_BY_SIGNAL,
+      .threshold = {
+        .rssi = -127, 
+        .authmode = wifi_auth_mode_t::WIFI_AUTH_WPA_WPA2_PSK,
+        .rssi_5g_adjustment = 0,
+      },
+      .pmf_cfg = {
+        .capable = true, 
+        .required = false
+      },
+      .rm_enabled = 0,
+      .btm_enabled = 0,
+      .mbo_enabled = 0,
+      .ft_enabled = 0,
+      .owe_enabled = 0,
+      .transition_disable = 0,
+      .reserved1 = 0,
+      .sae_pwe_h2e = wifi_sae_pwe_method_t::WPA3_SAE_PWE_UNSPECIFIED,
+      .sae_pk_mode = wifi_sae_pk_mode_t::WPA3_SAE_PK_MODE_AUTOMATIC,
+      .failure_retry_cnt = 0,
+      .he_dcm_set = 0,
+      .he_dcm_max_constellation_tx = 0,
+      .he_dcm_max_constellation_rx = 0,
+      .he_mcs9_enabled = 0,
+      .he_su_beamformee_disabled = 0,
+      .he_trig_su_bmforming_feedback_disabled = 0,
+      .he_trig_mu_bmforming_partial_feedback_disabled = 0,
+      .he_trig_cqi_feedback_disabled = 0,
+      .vht_su_beamformee_disabled = 0,
+      .vht_mu_beamformee_disabled = 0,
+      .vht_mcs8_enabled = 0,
+      .reserved2 = 0,
+      .sae_h2e_identifier = {0,}
+    },
+  };
+
+  memcpy(sta_config.sta.ssid, ssid, strlen(ssid));
+  if ((pass == nullptr) || (strlen(pass) == 0)) {
+    sta_config.sta.threshold.authmode = wifi_auth_mode_t::WIFI_AUTH_OPEN;
+  } else {
+    memcpy(sta_config.sta.password, pass, strlen(pass));
+  }
+    
+  wifi_mode_t currentMode;
+  esp_wifi_get_mode(&currentMode);
+  if (currentMode == WIFI_MODE_AP) {
+    if (esp_wifi_set_mode(WIFI_MODE_APSTA) != ESP_OK) {
+      esp_netif_destroy(mSTANetif);
+      mSTANetif = nullptr;
+      return false;
+    }
+  } else {
+    if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) {
+      esp_netif_destroy(mSTANetif);
+      mSTANetif = nullptr;
+      return false;
+    }
+  }
+
+  if (esp_wifi_set_config(WIFI_IF_STA, &sta_config) != ESP_OK) {
+    esp_wifi_set_mode(currentMode);
+    if (mSTANetif != nullptr) {
+      esp_netif_destroy(mSTANetif);
+      mSTANetif = nullptr;
+    }
+    return false;    
+  } else {
+    if (esp_wifi_start() != ESP_OK) {
+      esp_wifi_set_mode(currentMode);
+      if (mSTANetif != nullptr) {
+        esp_netif_destroy(mSTANetif);
+        mSTANetif = nullptr;
+      }
+      return false;        
+    }
+  }
+
+  return esp_wifi_connect() == ESP_OK;
+}
+
+WiFiDriver& WiFiDriver::getInstance() {
+  static WiFiDriver instance;
+  return instance;
 }
