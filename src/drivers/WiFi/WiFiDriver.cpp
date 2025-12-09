@@ -124,16 +124,19 @@ bool WiFiDriver::softAP(const char* ssid, const char* pass, uint8_t channel) {
       } else {
         esp_wifi_set_mode(oldMode);
         esp_netif_destroy(mAPNetif);
+        mAPNetif = nullptr;
         return false;  
       }
     } else {
       esp_wifi_set_mode(oldMode);
       esp_netif_destroy(mAPNetif);
+      mAPNetif = nullptr;
       return false;
     }
   } else {
     esp_wifi_set_mode(oldMode);
     esp_netif_destroy(mAPNetif);
+    mAPNetif = nullptr;
     return false;
   }
 }
