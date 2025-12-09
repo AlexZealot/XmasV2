@@ -9,10 +9,7 @@
  */
 # pragma once
 
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
+# include "../drivers/WiFi/WiFiDriver.h"
 # include "../debug.h"
 # include "../SystemCore.h"
 
@@ -22,11 +19,12 @@
  */
 class WiFiMan: public Listener {
   public:
-		/**
-		 * @brief базовый конструктор
-		 */
+    /**
+     * @brief базовый конструктор
+     */
     WiFiMan();
-		/**
+    virtual ~WiFiMan() override;
+    /**
      * @brief реакция на событие
      * 
      * @param msg сообщение
@@ -35,21 +33,5 @@ class WiFiMan: public Listener {
      */
     virtual void onEvent(MsgID msg, const void* data) override;
   private:
-		/**
-		 * @brief запустить AP
-		 * 
-		 * @param ssid ssid soft AP
-		 * @param pass pass soft AP
-		 * @param channel номер канала
-		 */
-    void softAP(const char* ssid, const char* pass, uint8_t channel = 1);	
-		/**
-		 * @brief обработчик event-loop
-		 * 
-		 * @param arg указатель на класс-родитель
-		 * @param event_base подсистема, сгенерировавшая событие
-		 * @param event_id ID события
-		 * @param event_data данные события
-		 */
-    static void wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    WiFiDriver* mDriver;
 };
