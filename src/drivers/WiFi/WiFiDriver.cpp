@@ -275,8 +275,6 @@ bool WiFiDriver::stopAP() {
 }
 
 bool WiFiDriver::startSTA(const char* ssid, const char* pass) {
-  esp_wifi_stop();
-  vTaskDelay(pdMS_TO_TICKS(1000));
   if (mSTANetif == nullptr) {
     mSTANetif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
     if (!mSTANetif) {
@@ -339,6 +337,9 @@ bool WiFiDriver::startSTA(const char* ssid, const char* pass) {
     memcpy(sta_config.sta.password, pass, strlen(pass));
   }
     
+  esp_wifi_stop();
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
   wifi_mode_t currentMode;
   esp_wifi_get_mode(&currentMode);
   if (currentMode == WIFI_MODE_AP) {
