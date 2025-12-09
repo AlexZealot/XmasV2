@@ -14,8 +14,6 @@
 # include "SystemCore.h"
 # include "WiFi/WiFiMan.h"
 
-constexpr auto TAG = "TAG";
-
 Listener* wifi;
 
 extern "C" void app_main() {
