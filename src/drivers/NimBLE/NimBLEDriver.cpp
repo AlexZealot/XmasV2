@@ -63,7 +63,7 @@ NimBLEDriver::NimBLEDriver() {
   // // Запускаем NimBLE порт
   // nimble_port_freertos_init(ble_host_task);
   // ESP_LOGI(TAG, "Heap (nimble_port_freertos_init): %u", esp_get_free_heap_size());
-
   CALL_FUNC(nimble_port_init());
   nimble_port_freertos_init(ble_host_task);
+  ESP_LOGI(TAG, "Free mem: %u", esp_get_free_heap_size());
 }
