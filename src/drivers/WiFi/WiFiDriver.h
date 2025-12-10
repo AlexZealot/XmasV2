@@ -17,9 +17,22 @@
 # include "Utils/Utils.h"
 
 /**
+ * @namespace WIFI_EG_BITS
+ * @brief пространство имен для битов событий WiFi
+ */
+namespace WIFI_EG_BITS {
+  constexpr EventBits_t WIFI_HAS_AP_BIT = (1 << 0); /**< включена ли AP */
+  constexpr EventBits_t WIFI_STA_CONNECTED_BIT = (1 << 1); /**< подключились ли к AP */
+  constexpr EventBits_t WIFI_STA_FAIL_BIT = (1 << 2); /**< не удалось подключиться к AP */
+  constexpr EventBits_t WIFI_HAS_STA_BIT = (1 << 3); /**< включен ли STA */
+  constexpr EventBits_t WIFI_HAS_ANY_INTERFACE = WIFI_HAS_AP_BIT | WIFI_HAS_STA_BIT; /**< включен ли хотя бы один интерфейс */
+}
+
+/**
  * @class WiFiDriver
  * @brief драйвер для работы с WiFi
  * @note синглтон
+ * @warning nvs должен быть инициализирован извне
  */
 class WiFiDriver {
   public:
@@ -32,6 +45,10 @@ class WiFiDriver {
      * @brief прототип колбэка с одним параметром IPAddress
      */
     using WiFiIPCallback = std::function<void(const IPAddress& ip)>;
+    /**
+     * @brief прототип колбэка событий WiFi из eventLoop
+     */
+    using WiFiEventCallback = std::function<void(esp_event_base_t event_base, int32_t event_id, void* event_data)>;
     /**
      * @brief установить колбэк на подключение к точке доступа
      * 
@@ -89,6 +106,14 @@ class WiFiDriver {
       mOnAuthChanged = cb;
     }
     /**
+     * @brief установить колбэк на события WiFi
+     * 
+     * @param cb колбэк
+     */
+    inline void setOnWiFiEvent(WiFiEventCallback cb) {
+      mOnWiFiEventCallback = cb;
+    }
+    /**
      * @brief запустить AP
      * 
      * @param ssid ssid soft AP
@@ -105,13 +130,6 @@ class WiFiDriver {
      * @return @c false остановить AP не удалось, либо произошла ошибка переключения режима (например, на STA с APSTA)
      */
     bool stopAP();
-    /**
-     * @brief существует ли активная точка доступа
-     * 
-     * @return @c true существует @n\
-     * @return @c false не существует
-     */
-    bool isApActive();
     /**
      * @brief установить максимальное количество попыток переподключений к точке доступа
      * 
@@ -130,6 +148,13 @@ class WiFiDriver {
      * @return @c false запустить подсистему не удалось
      */
     bool startSTA(const char* ssid, const char* pass);
+    /**
+     * @brief остановить работу STA
+     * 
+     * @return @c true STA остановлена @n\
+     * @return @c false остановить STA не удалось
+     */
+    bool stopSTA();
   private:
     /**
      * @brief обработчик event-loop
@@ -147,6 +172,9 @@ class WiFiDriver {
     esp_event_handler_instance_t mEHInstance = nullptr; /**< обработчик событий WiFi */
     esp_event_handler_instance_t mEHInstanceIP = nullptr; /**< обработчик событий WiFi */
     int MaxRetryCount = 10; /**< максимальное количество попыток переподключений к точке доступа */
+    wifi_config_t sta_config; /**< конфигурация для подключения к станции */
+    wifi_config_t ap_config; /**< конфигурация AP */
+    wifi_mode_t cur_mode = wifi_mode_t::WIFI_MODE_NULL; /**< текущий режим конфигурации WiFi */
 
     WiFiCallback mOnAPConnected = nullptr; /**< колбэк на подключение клиента */
     WiFiCallback mOnAPDisconnected = nullptr; /**< колбэк на отключение клиента */
@@ -155,6 +183,7 @@ class WiFiDriver {
     WiFiCallback mOnSTADisconnected = nullptr; /**< колбэк на отключение от STA */
     WiFiIPCallback mOnSTAIPReceived = nullptr; /**< колбэк на получение IP */
     WiFiCallback mOnAuthChanged = nullptr; /**< колбэк на изменение метода авторизации */
+    WiFiEventCallback mOnWiFiEventCallback = nullptr; /**< колбэк на события WiFi */
     /**
      * @brief базовый конструктор
      */
@@ -169,4 +198,31 @@ class WiFiDriver {
     WiFiDriver(WiFiDriver&&) = delete; /**< запрет конструктора перемещения */
     WiFiDriver& operator= (WiFiDriver&&) = delete; /**< запрет оператора перемещения */
     /// @endcond
+
+    /**
+     * @brief сконфигурировать параметры точки доступа
+     * 
+     * @param enable включена ли точка доступа 
+     * @param SSID ssid
+     * @param PASS пароль
+     * 
+     * @return @c true конфигурация корректна и применена @n\
+     * @return @c false конфигурация не корректна и не применена
+     */
+    bool configureAP(bool enable, const char* SSID = nullptr, const char* PASS = nullptr, uint8_t channel = 1);
+    /**
+     * @brief сконфигурировать параметры подключения к точке доступа
+     * 
+     * @param enable включен ли режим STA
+     * @param SSID ssid
+     * @param PASS pass
+     * @return @c true конфигурация корректна и применена @n\
+     * @return @c false конфигурация не корректны и не применена
+     */
+    bool configureSTA(bool enable, const char* SSID = nullptr, const char* PASS = nullptr);
+    /**
+     * @brief остановить WiFi для конфигурации
+     */
+    void stopWiFiOnConfigure();
+    void startWiFiOnConfigure();
 };

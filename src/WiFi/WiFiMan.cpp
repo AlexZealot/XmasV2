@@ -36,6 +36,14 @@ WiFiMan::WiFiMan() {
   DEBUG_CHECK_BOOL_WIFI(mDriver.softAP(DEFAULT_SSID, DEFAULT_PASS));
   vTaskDelay(pdMS_TO_TICKS(10000));
   DEBUG_CHECK_BOOL_WIFI(mDriver.startSTA("Tech", "mIBpW0ov"));
+  vTaskDelay(pdMS_TO_TICKS(10000));
+  DEBUG_CHECK_BOOL_WIFI(mDriver.stopSTA());
+  vTaskDelay(pdMS_TO_TICKS(10000));
+  DEBUG_CHECK_BOOL_WIFI(mDriver.startSTA("Tech", "mIBpW0ov"));
+  vTaskDelay(pdMS_TO_TICKS(10000));
+  DEBUG_CHECK_BOOL_WIFI(mDriver.stopAP());
+  vTaskDelay(pdMS_TO_TICKS(20000));
+  DEBUG_CHECK_BOOL_WIFI(mDriver.stopSTA());
 }
 
 WiFiMan::~WiFiMan() {
