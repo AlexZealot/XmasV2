@@ -67,7 +67,7 @@ static int ble_gap_event_cb(struct ble_gap_event *event, void *arg) {
             // }
             
             // Можно получить дополнительные данные
-            ESP_LOGI(TAG, "  Data length: %d bytes", disc->length_data);
+            ESP_LOGI(TAG, "Heap: %u  Data length: %d bytes", esp_get_free_heap_size(), disc->length_data);
             
             break;
         }
