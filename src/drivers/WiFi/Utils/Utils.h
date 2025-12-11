@@ -139,7 +139,7 @@ struct IPAddress {
    */
   IPAddress(const char* address) {
     if (!address) {
-      sscanf(address, "%u.%u.%u.%u", addr[0], addr[1], addr[2], addr[3]);
+      sscanf(address, "%hhu.%hhu.%hhu.%hhu", &addr[0], &addr[1], &addr[2], &addr[3]);
     } else {
       raw = 0;
     }
@@ -152,7 +152,7 @@ struct IPAddress {
    */
   IPAddress& operator=(const char* address) {
     if (address) {
-      sscanf(address, "%u.%u.%u.%u", addr[0], addr[1], addr[2], addr[3]);
+      sscanf(address, "%hhu.%hhu.%hhu.%hhu", &addr[0], &addr[1], &addr[2], &addr[3]);
       return *this;
     } else {
       raw = 0;
