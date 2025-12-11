@@ -1,10 +1,11 @@
 /**
- * @file Utils.cpp
+ * @file NimCharacteristics.cpp
  * @author Алексей Казаков Zealot (akazakov.zealot@gmail.com)
- * @brief реализация унилит для работы с WiFi
+ * @brief реализация класса NimCharacteristics
  * @version 0.1
  * @date 11-12-2025
  * 
  * @copyright Copyright (c) 2025
+ * 
  */
-# include "Utils.h"
+# include "NimCharacteristics.h"

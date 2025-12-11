@@ -1,3 +1,13 @@
+/**
+ * @file NimBLEDriver.h
+ * @author Алексей Казаков Zealot (akazakov.zealot@gmail.com)
+ * @brief драйвер для работы с NimBLE.
+ * @version 0.1
+ * @date 11-12-2025
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 # pragma once
 
 # include "esp_log.h"
@@ -18,6 +28,10 @@ namespace NIM_BLE_BITS {
 
 constexpr int SCAN_DURATION_INFINITE = BLE_HS_FOREVER; /**< бесконечное сканирование */
 
+/**
+ * @class NimBLEDriver
+ * @brief драйвер для работы с NimBLE
+ */
 class NimBLEDriver {
   public:
     /**

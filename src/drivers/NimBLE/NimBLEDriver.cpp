@@ -1,3 +1,12 @@
+/**
+ * @file NimBLEDriver.cpp
+ * @@author Алексей Казаков Zealot (akazakov.zealot@gmail.com)
+ * @brief реализация класса NimBLEDriver
+ * @version 0.1
+ * @date 11-12-2025
+ * 
+ * @copyright Copyright (c) 2025
+ */
 # include "NimBLEDriver.h"
 
 int NimBLEDriver::scanCallback(ble_gap_event *event, void *arg) {
