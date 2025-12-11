@@ -110,7 +110,7 @@ WiFiDriver::WiFiDriver() {
 }
 
 WiFiDriver::~WiFiDriver() {
-  stopAP();
+  stopWiFiOnConfigure();
   if (mEHInstance != nullptr) {
     esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, mEHInstance);
     mEHInstance = nullptr;
@@ -119,6 +119,8 @@ WiFiDriver::~WiFiDriver() {
     esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, mEHInstanceIP);
     mEHInstanceIP = nullptr;
   }
+  esp_wifi_deinit();
+  esp_netif_deinit();
 }
 
 
