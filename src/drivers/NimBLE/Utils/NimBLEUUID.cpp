@@ -35,7 +35,7 @@ NimBLEUUID& NimBLEUUID::operator = (const char* UUID) {
        "%2hhx%2hhx-"
        "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
 
-       &mUUID.value[15], &mUUID.value[14], &mUUID.value[13], &mUUID.value[12],  // Обратный порядок!
+       &mUUID.value[15], &mUUID.value[14], &mUUID.value[13], &mUUID.value[12], 
        &mUUID.value[11], &mUUID.value[10],
        &mUUID.value[9], &mUUID.value[8],
        &mUUID.value[7], &mUUID.value[6],
