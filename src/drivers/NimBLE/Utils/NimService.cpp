@@ -8,3 +8,8 @@
  * @copyright Copyright (c) 2025
  */
 # include "NimService.h"
+
+NimService::NimService(NimBLEUUID& UUID) {
+	mDefinition.type = BLE_GATT_SVC_TYPE_PRIMARY;
+	mDefinition.uuid = &(UUID.getIDFValue().u);
+}

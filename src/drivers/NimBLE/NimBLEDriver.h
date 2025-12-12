@@ -17,6 +17,7 @@
 # include "services/gap/ble_svc_gap.h"
 
 # include "Utils/NimScan.h"
+# include "Utils/NimService.h"
 
 /**
  * @namespace NIM_BLE_BITS
@@ -95,6 +96,9 @@ class NimBLEDriver {
      * @brief остановить сканирование
      */
     void stopScan();
+    NimService* createService(const NimBLEUUID& uuid) {
+      return new NimService(uuid);
+    }
   private:
     /**
      * @brief Конструктор, инициализирующий драйвер
